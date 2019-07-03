@@ -1,3 +1,5 @@
+import time
+
 from flask import Flask,render_template, request, session, Response, redirect
 from database import connector
 from model import entities
@@ -80,6 +82,28 @@ def delete_message():
     session.commit()
     return "Deleted Message"
 
+@app.route('/authenticate', methods = ['POST'])
+def authenticate():
+    time.sleep(1)
+    #1. Get request
+    message = json.loads(request.data)
+    username = message['username']
+    password = message['password']
+
+    #2. look in database
+    db_session = db.getSession(engine)
+    try:
+        user = db_session.query(entities.User
+            ).filter(entities.User.username == username
+            ).filter(entities.User.password == password
+            ).one()
+        session['logged_user'] = user.id
+        message = {'message':'Authorized'}
+        #return Response(message, status=200,mimetype='application/json')
+        return Response(json.dumps(message, cls=connector.AlchemyEncoder),status=200,mimetype='application/json')
+    except Exception:
+        message = {'message':'Unauthorized'}
+        return Response(json.dumps(message, cls=connector.AlchemyEncoder), status=401, mimetype='application/json')
 if __name__ == '__main__':
     app.secret_key = ".."
     app.run(port=8080, threaded=True, host=('127.0.0.1'))
