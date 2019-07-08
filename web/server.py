@@ -104,6 +104,23 @@ def authenticate():
     except Exception:
         message = {'message':'Unauthorized'}
         return Response(json.dumps(message, cls=connector.AlchemyEncoder), status=401, mimetype='application/json')
+    
+
+@app.route('/messages', methods=['POST'])
+def create_messages():
+    msg_data = json.loads(request.data)
+    message = entities.Message(
+        content=msg_data['content'],
+        user_from_id=msg_data['user_from_id'],
+        user_to_id=msg_data['user_to_id'],
+    )
+    session = db.getSession(engine)
+    session.add(message)
+    session.commit()
+    message = {'message': 'Done'}
+    return Response(json.dumps(message, cls=connector.AlchemyEncoder), status=200, mimetype='applcation/json')
+
+
 if __name__ == '__main__':
     app.secret_key = ".."
     app.run(port=8080, threaded=True, host=('127.0.0.1'))
